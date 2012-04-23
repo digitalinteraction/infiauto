@@ -1,4 +1,4 @@
 infiauto
 ========
 
-Data structures for advanced string matching
+Algorithms for approximate string matching
