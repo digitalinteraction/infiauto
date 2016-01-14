@@ -12,23 +12,25 @@ public final class LevenshteinAutomaton
         extends Automaton<FixedLengthBitSet, Boolean>
         implements Serializable {
 
-	private static final long serialVersionUID = 2278879493224424765L;
+    public/*private */ static enum Parameter {
 
-	private enum Parameter {
         I, M;
     }
 
-    private enum Type {
+    public/*private */ static enum Type {
+
         USUAL, T, MS;
     }
 
-    private static class Position
+    public/*private */ static class Position
             implements Comparable<Position> {
 
         private Parameter parameter;
         private Type type;
         private int index;
         private int error;
+        private transient int hash_code;
+        private transient String to_string;
 
         public Position(Parameter parameter,
                 Type type,
@@ -38,24 +40,25 @@ public final class LevenshteinAutomaton
             this.type = type;
             this.index = index;
             this.error = error;
-        } // Position
+        }
 
         public Parameter getParameter() {
             return parameter;
-        } // getParameter
+        }
 
         public Type getType() {
             return type;
-        } // getType
+        }
 
         public int getIndex() {
             return index;
-        } // getIndex
+        }
 
         public int getError() {
             return error;
-        } // getError
+        }
 
+        @Override
         public int compareTo(Position p) {
             if ((p.getParameter() == parameter)
                     && (p.getType() == type)
@@ -80,39 +83,89 @@ public final class LevenshteinAutomaton
                 return 1;
             }
             return 0;
-        } // compareTo
+        }
 
         @Override
         public boolean equals(Object o) {
-            if (o instanceof Position) {
-                return compareTo((Position) o) == 0;
+            if(!(o instanceof Position)) {
+                return false;
             }
-            return false;
-        } // equals
+            Position p = (Position) o;
+            return parameter == p.getParameter()
+                    && type == p.getType()
+                    && index == p.getIndex()
+                    && error == p.getError();
+        }
 
         @Override
         public int hashCode() {
-            return getParameter().hashCode()
-                    ^ getType().hashCode()
-                    ^ (getIndex() * 0x00010000)
-                    ^ getError();
-        } // hashCode
-    } // class Position
+            if(hash_code == 0) {
+                // lazily initialize the hashCode value
+                hash_code = (parameter.ordinal() + 1)
+                        ^ (2 * (type.ordinal() + 1))
+                        ^ (3 * (index + 1))
+                        ^ (5 * (error + 1));
+            }
+            
+            return hash_code;
+        }
+        
+        @Override
+        public String toString() {
+            if(to_string == null) {
+                // lazily initialize the toString value
+                if(index == 0) {
+                    to_string = String.format("%s#%d",
+                            parameter.name(),
+                            error);
+                }
+                else {
+                    to_string = String.format("%s%c%d#%d",
+                            parameter.name(),
+                            (index < 0 ? '-' : '+'),
+                            (index < 0 ? index * -1 : index),
+                            error);
+                }
+            }
+            
+            return to_string;
+        }
+    }
 
-    private static class PositionState
-            extends TreeSet<Position>
+    public/*private */ static class PositionState
+            extends TreeSet<Position> {
+        /*
             implements Comparable<PositionState> {
+            */
 
-		private static final long serialVersionUID = -2766442001215571923L;
-
-		public PositionState() {
+        public PositionState() {
             super();
-        } // PositionState()
+        }
 
         public PositionState(Collection<? extends Position> c) {
             super(c);
-        } // PositionState(Collection<? extends Position>)
+        }
+        
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder(20);
+            sb.append('{');
+            
+            int count = 0;
+            Iterator<Position> iterator = iterator();
+            while(iterator.hasNext()) {
+                Position p = iterator.next();
+                if(count++ > 0) {
+                    sb.append(", ");
+                }
+                sb.append(p);
+            }
+            
+            sb.append('}');
+            return sb.toString();
+        }
 
+        /*
         public boolean contains(Position p) {
             for (Position t : this) {
                 if (t.equals(p)) {
@@ -120,24 +173,26 @@ public final class LevenshteinAutomaton
                 }
             }
             return false;
-        } // contains
+        }
+        */
 
+        /*
         @Override
         public boolean equals(Object o) {
             if (o instanceof PositionState) {
                 return equals((PositionState) o);
             }
             return false;
-        } // equals(Object)
+        }
 
         @Override
         public int hashCode() {
-            int hash = 0;
+            int hash = 6211;//0;
             for (Position p : this) {
                 hash ^= p.hashCode();
             }
             return hash;
-        } // hashCode
+        }
 
         public boolean equals(PositionState s) {
             if (s.size() != size()) {
@@ -149,7 +204,7 @@ public final class LevenshteinAutomaton
                 }
             }
             return true;
-        } // equals(PositionState)
+        }
 
         public int compareTo(PositionState s) {
             if (size() < s.size()) {
@@ -161,10 +216,11 @@ public final class LevenshteinAutomaton
                 return 0;
             }
             return -1;
-        } // compareTo
-    } // class PositionState
+        }
+        */
+    }
 
-    private static class Point {
+    public/*private */ static class Point {
 
         private Type type;
         private int x;
@@ -176,40 +232,60 @@ public final class LevenshteinAutomaton
             this.type = type;
             this.x = x;
             this.y = y;
-        } // Point
+        }
 
         public Type getType() {
             return type;
-        } // getType
+        }
 
         public int getX() {
             return x;
-        } // getX
+        }
 
         public int getY() {
             return y;
-        } // getY
+        }
+        
+        @Override
+        public int hashCode() {
+            return (type.ordinal() + 1)
+                    ^ (2* x + 1)
+                    ^ (3 * y + 1);
+        }
 
+        @Override
+        public boolean equals(Object obj) {
+            if(!(obj instanceof Point)) {
+                return false;
+            }
+            
+            Point p = (Point) obj;
+            return (p.getType() == type)
+                    && (p.getX() == x)
+                    && (p.getY() == y);
+        }
+        
+        /*
         public boolean equals(Point p) {
             return (p.getType() == type)
                     && (p.getX() == x)
                     && (p.getY() == y);
-        } // equals
-    } // class Point
+        }
+        * 
+        */
+    }
 
-    private static class SetOfPoints
+    public/*private */ static class SetOfPoints
             extends HashSet<Point> {
 
-		private static final long serialVersionUID = -7999018882937107435L;
-
-		SetOfPoints() {
+        SetOfPoints() {
             super();
-        } // SetOfPoints()
+        }
 
         SetOfPoints(Collection<? extends Point> c) {
             super(c);
-        } // SetOfPoints(Collection<? extends Point>)
-    } // class SetOfPoints
+        }
+    }
 
     private class Transition {
 
@@ -236,12 +312,17 @@ public final class LevenshteinAutomaton
         public PositionState getTo() {
             return to;
         }
+        
+        @Override
+        public String toString() {
+            return String.format("%s => %s => %s", from, b, to);
+        }
     }
 
-    private enum ChiType {
+    public/*private */ enum ChiType {
 
         EPSILON, T, MS;
-    } // enum ChiType
+    }
     private static final char NONALPHABET_CHARACTER = '$';
     private static final PositionState START_STATE = new PositionState(Arrays.asList(new Position[]{new Position(Parameter.I, Type.USUAL, 0, 0)}));
     private static final ChiType DEFAULT_CHI = ChiType.EPSILON;
@@ -258,10 +339,10 @@ public final class LevenshteinAutomaton
         ArrayList<FixedLengthBitSet> result = new ArrayList<FixedLengthBitSet>(max);
         FixedLengthBitSet temp = new FixedLengthBitSet(len);
 
-        // Add the all-zero bit set
+        // add the all-zero bit set
         result.add(temp);
 
-        // Build the rest of the similar length bit sets
+        // build the rest of the similar length bit sets
         for (int i = 0; i < max - 1; i++) {
             temp = new FixedLengthBitSet(len);
             for (int j = 0; j < len; j++) {
@@ -279,7 +360,7 @@ public final class LevenshteinAutomaton
             result.add(temp);
         }
 
-        // Recursively call this method with successively shorter lengths
+        // recursively call this method with successively shorter lengths
         if (len > 1) {
             result.addAll(buildPowerSet(len - 1));
         }
@@ -343,7 +424,7 @@ public final class LevenshteinAutomaton
                 }
 
                 // first bit in the binary string is true
-                if (b.get(0)) {
+                if (b.get(b.fixedLength() - 1)) {
                     return new SetOfPoints(Arrays.asList(new Point[]{new Point(Type.USUAL, index + 1, error)}));
                 }
 
@@ -357,22 +438,22 @@ public final class LevenshteinAutomaton
                 }
 
                 // find the first true bit in the binary string
-                int first_one = 0;
-                for (int i = 1; i < b.fixedLength(); i++) {
-                    if (b.get(i)) {
-                        first_one = i;
-                        break;
-                    }
+                int first_one = b.fixedLength() - 2;
+                while ((first_one >= 0) && !b.get(first_one)) {
+                    first_one--;
                 }
 
-                if (first_one == 0) {
+                if (first_one == -1) {
                     // no true bit was found
                     return new SetOfPoints(Arrays.asList(new Point[]{new Point(Type.USUAL, index, error + 1),
                                 new Point(Type.USUAL, index + 1, error + 1)}));
                 }
 
                 // found at least one true bit
-                first_one++;
+                //first_one += 2;
+//                first_one += 1;
+                // convert the value
+                first_one = b.fixedLength() - first_one;// - 1;
                 return new SetOfPoints(Arrays.asList(new Point[]{new Point(Type.USUAL, index, error + 1),
                             new Point(Type.USUAL, index + 1, error + 1),
                             new Point(Type.USUAL, index + first_one, error + first_one - 1)}));
@@ -460,7 +541,7 @@ public final class LevenshteinAutomaton
         return null;
     }
 
-    private static FixedLengthBitSet functionR(int edit_distance,
+    public/*private */ static FixedLengthBitSet functionR(int edit_distance,
             Position pos,
             FixedLengthBitSet b) {
         int length = -1;
@@ -472,11 +553,9 @@ public final class LevenshteinAutomaton
                 length = b.fixedLength() - edit_distance - pos.getIndex();
             }
 
-            FixedLengthBitSet result = new FixedLengthBitSet(length);
             int start = edit_distance + pos.getIndex();
-            for (int i = 0; i < length; i++) {
-                result.set(i, b.get(start + i));
-            }
+            int reversed_start = b.fixedLength() - start - length;
+            FixedLengthBitSet result = b.substring(reversed_start, length);
             return result;
         }
 
@@ -486,11 +565,9 @@ public final class LevenshteinAutomaton
             length = -pos.getIndex();
         }
 
-        FixedLengthBitSet result = new FixedLengthBitSet(length);
         int start = b.fixedLength() + pos.getIndex();
-        for (int i = 0; i < length; i++) {
-            result.set(i, b.get(start + i));
-        }
+        int reversed_start = b.fixedLength() - start - length;
+        FixedLengthBitSet result = b.substring(reversed_start, length);
         return result;
     }
 
@@ -619,11 +696,12 @@ public final class LevenshteinAutomaton
 
         this.chi = DEFAULT_CHI;
         this.edit_distance = edit_distance;
+        this.root_node = new State<FixedLengthBitSet>(null, "{I#0}");
         List<Transition> transitions = new LinkedList<Transition>();
         HashMap<PositionState, State<FixedLengthBitSet>> state_mappings = new HashMap<PositionState, State<FixedLengthBitSet>>();
 
         Queue<PositionState> queue = new LinkedList<PositionState>();
-        List<PositionState> added_states = new LinkedList<PositionState>();
+        LinkedList<PositionState> added_states = new LinkedList<PositionState>();
         ArrayList<FixedLengthBitSet> power_set = buildPowerSet(2 * edit_distance + 2);
 
         added_states.add(START_STATE);
@@ -631,8 +709,7 @@ public final class LevenshteinAutomaton
         TreeSet<Integer> temp_set = new TreeSet<Integer>();
         temp_set.add(new Integer(0));
 
-        HashSet<State<FixedLengthBitSet>> finished_state_list
-                = new HashSet<State<FixedLengthBitSet>>();
+        HashSet<State<FixedLengthBitSet>> finished_state_list = new HashSet<State<FixedLengthBitSet>>();
 
         // build the universal Levenshtein automaton
         queue.add(START_STATE);
@@ -651,7 +728,7 @@ public final class LevenshteinAutomaton
                             queue.add(next_state);
                             added_states.add(next_state);
 
-                            State<FixedLengthBitSet> s = new State<FixedLengthBitSet>(null);//next_state.first().getParameter() == Parameter.M);
+                            State<FixedLengthBitSet> s = new State<FixedLengthBitSet>(next_state.first().getParameter() == Parameter.M ? Boolean.TRUE : null, next_state.toString());
                             state_mappings.put(next_state, s);
                         } else {
                             next_state = added_states.get(index);
@@ -670,20 +747,12 @@ public final class LevenshteinAutomaton
                 }
             }
         }
-
-        // find the only state without any outbound edges
-        for(State<FixedLengthBitSet> current_state : finished_state_list) {
-            if(current_state.getNextStateCount() == 0) {
-                current_state.setElement(Boolean.TRUE);
-                break;
-            }
-        }
     }
 
     /**
      * Creates a characteristic vector of a character against a string.
      * @param c Character from which the characteristic vector is created
-     * @param s String from which the characteristic vector is created
+     * @param padded_string String from which the characteristic vector is created
      * @param edit_distance Distance greater than or equal to one of the
      * desired LevenshteinAutomaton
      * @return FixedLengthBitSet representing the characteristic bit vector
@@ -694,8 +763,9 @@ public final class LevenshteinAutomaton
             len = s.length();
         }
         FixedLengthBitSet result = new FixedLengthBitSet(len);
+        int first_bit = len - 1;
         for (int i = 0; i < len; i++) {
-            result.set(i, (c == s.charAt(i)));
+            result.set((first_bit - i), (c == s.charAt(i)));
         }
         return result;
     }
@@ -703,13 +773,13 @@ public final class LevenshteinAutomaton
     private class RecognizeMapping {
 
         public String working_string;
-        public DictionaryAutomaton.State<Character> dictionary_state;
-        public LevenshteinAutomaton.State<FixedLengthBitSet> levenshtein_state;
+        public DictionaryAutomaton.State dictionary_state;
+        public LevenshteinAutomaton.State levenshtein_state;
         public int index;
 
         public RecognizeMapping(String working_string,
-                DictionaryAutomaton.State<Character> dictionary_state,
-                LevenshteinAutomaton.State<FixedLengthBitSet> levenshtein_state,
+                DictionaryAutomaton.State dictionary_state,
+                LevenshteinAutomaton.State levenshtein_state,
                 int index) {
             this.working_string = working_string;
             this.dictionary_state = dictionary_state;
@@ -728,35 +798,44 @@ public final class LevenshteinAutomaton
      * matching the input word
      */
     public Collection<String> recognize(String input_string, DictionaryAutomaton dictionary_automaton) {
-        Collection<String> result = new TreeSet<String>();
-        String s = input_string;
-        for (int i = 0; i < edit_distance; i++) {
-            s = LevenshteinAutomaton.NONALPHABET_CHARACTER + s;
+        TreeSet<String> result = new TreeSet<String>();
+        
+        // prepend character(padded_string) not belonging to the dictionary's alphabet
+        StringBuilder sb = new StringBuilder(input_string.length() + edit_distance);
+        for(int i = 0; i < edit_distance; i++) {
+            sb.append(NONALPHABET_CHARACTER);
         }
-        RecognizeMapping mapping = null;
-        Stack<RecognizeMapping> stack = new Stack<RecognizeMapping>();
-        stack.push(new RecognizeMapping("", dictionary_automaton.getCurrentState(), this.getCurrentState(), 0));
+        sb.append(input_string);
+        String padded_string = sb.toString();
 
-        while (!stack.isEmpty()) {
-            mapping = stack.pop();
+        Stack<RecognizeMapping> mapping_stack = new Stack<RecognizeMapping>();
+        mapping_stack.push(new RecognizeMapping("", dictionary_automaton.getCurrentState(), this.getCurrentState(), 0));
+
+        while (!mapping_stack.isEmpty()) {
+            RecognizeMapping current_mapping = mapping_stack.pop();
+            String substring = padded_string.substring(current_mapping.index);
+                
             for (Character c : dictionary_automaton.getAlphabet()) {
-                    String ss = s.substring(mapping.index);
-                    DictionaryAutomaton.State<Character> dictionary_next = mapping.dictionary_state.getNextState(c);
-                    if (dictionary_next == null)
-                    	continue;
-                    FixedLengthBitSet characteristic_vector = buildCharacteristicVector(c.charValue(), ss, edit_distance);
-                    LevenshteinAutomaton.State<FixedLengthBitSet> levenshtein_next = mapping.levenshtein_state.getNextState(characteristic_vector);
-                    if (levenshtein_next == null)
-                    	continue;
+                DictionaryAutomaton.State dictionary_next = current_mapping.dictionary_state.getNextState(c);
+                FixedLengthBitSet characteristic_vector = buildCharacteristicVector(c.charValue(), substring, edit_distance);
+                LevenshteinAutomaton.State levenshtein_next = current_mapping.levenshtein_state.getNextState(characteristic_vector);
 
-                    if (dictionary_next.isAccept() && levenshtein_next.isAccept()) {
-                        result.add(mapping.working_string + c);
-                    }
-
-                    stack.push(new RecognizeMapping(mapping.working_string + c, dictionary_next, levenshtein_next, mapping.index + 1));
+                // check to ensure that next automata states exist
+                if ((dictionary_next == null) || (levenshtein_next == null)) {
+                    continue;
                 }
+
+                boolean da = dictionary_next.isAccept();
+                boolean la = levenshtein_next.isAccept();
+                if (da && la) {
+                    // accept state for both automata, add the working string to the results
+                    result.add(current_mapping.working_string + c);
+                }
+                
+                // continue to work on this string
+                mapping_stack.push(new RecognizeMapping(current_mapping.working_string + c, dictionary_next, levenshtein_next, current_mapping.index + 1));
             }
-       
+        }
 
         return result;
     }

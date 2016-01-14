@@ -7,7 +7,7 @@ import java.util.*;
 
 /**
  *
- * @author court
+ * @author InfiniteAutomata
  */
 public final class HiddenMarkovModel {
 
@@ -30,17 +30,17 @@ public final class HiddenMarkovModel {
         } // getNextState
     } // class HiddenMarkovModelState
 
-    //private static final int ROUNDING_PRECISION = 8;
-    //private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_UP;
+    private static final int ROUNDING_PRECISION = 8;
+    private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_UP;
 
     private HiddenMarkovModelState start_state;
     private int length;
 
-   /* private static BigDecimal divide(BigDecimal dividend,
+    private static BigDecimal divide(BigDecimal dividend,
             BigDecimal divisor) {
 
         return dividend.divide(divisor, ROUNDING_PRECISION, ROUNDING_MODE);
-    }*/
+    }
 
     public HiddenMarkovModel(List<Map.Entry<String,BigInteger>> training_data) {
         this.start_state = new HiddenMarkovModelState();
@@ -155,7 +155,7 @@ public final class HiddenMarkovModel {
                 System.exit(-1);
             }
 
-            //String out_file_name = args[2];
+            String out_file_name = args[2];
 
             String[] in_file_names = new String[args.length - 3];
             for(int i = 0; i < in_file_names.length; i++) {
@@ -209,7 +209,7 @@ public final class HiddenMarkovModel {
 
             System.out.println(sorted_entries);
 
-            //HiddenMarkovModel hmm = new HiddenMarkovModel(sorted_entries);
+            HiddenMarkovModel hmm = new HiddenMarkovModel(sorted_entries);
         }
     } // main
 

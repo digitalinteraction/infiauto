@@ -1,64 +1,46 @@
 package com.infiauto.datastr.tree;
 
-import java.util.ArrayList;
+import static com.infiauto.DistanceFunctions.levenshteinDistance;
+import com.infiauto.datastr.ErrorCorrectable;
+import com.infiauto.datastr.MultiMap;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.TreeMap;
 
 /**
- *
- * @author InfiniteAutomaton
+ * Burkhard-Keller tree.
+ * @author Infinite Automaton
  */
-public abstract class BKTree<M extends Number,E>
-{
-    private class BKTreeNode
-    {
-        private E user_object;
-        private BKTreeNode parent_node;
-        private HashMap<M,BKTreeNode> child_nodes;
+public abstract class BKTree<M extends Number, E>
+        extends Tree<E>
+        implements ErrorCorrectable<E>, MetricTree<M, E> {
+
+    public static final BKTree<Integer, String> LEVENSHTEIN;
+
+    static {
+        LEVENSHTEIN = new BKTree<Integer, String>() {
+
+            @Override
+            public Integer metricFunction(String s1, String s2) {
+                return levenshteinDistance(s1, s2);
+            }
+        };
+    }
+
+    public class BKTreeNode extends Node {
+
+        private TreeMap<M, BKTreeNode> child_nodes;
 
         /**
-         *
+         * Construct a new node for a Burkhard-Keller tree.
          * @param user_object
          * @param parent_node
          */
         public BKTreeNode(E user_object,
-                BKTreeNode parent_node)
-        {
-            this.user_object = user_object;
-            this.parent_node = parent_node;
-            this.child_nodes = new HashMap<M,BKTreeNode>();
-        }
-
-        /**
-         *
-         * @param user_object
-         * @param metric_distance
-         * @return
-         */
-        public Collection<E> query(E user_object,
-                M metric_distance)
-        {
-            ArrayList<E> result = new ArrayList<E>();
-            M d = metric(user_object, this.user_object);
-            double min = d.doubleValue() - metric_distance.doubleValue();
-            double max = d.doubleValue() + metric_distance.doubleValue();
-
-            if(d.doubleValue() <= metric_distance.doubleValue())
-            {
-                result.add(this.user_object);
-            }
-
-            for(M d2 : child_nodes.keySet())
-            {
-                if((min <= d2.doubleValue())
-                        && (max >= d2.doubleValue()))
-                {
-                    result.addAll(child_nodes.get(d2).query(user_object, metric_distance));
-                }
-            }
-
-            return result;
+                BKTreeNode parent_node) {
+            super(parent_node, user_object);
+            this.child_nodes = new TreeMap<M, BKTreeNode>();
         }
 
         /**
@@ -66,19 +48,16 @@ public abstract class BKTree<M extends Number,E>
          * @param user_object
          * @return
          */
-        public boolean add(E user_object)
-        {
-            M d = metric(user_object, this.user_object);
+        public boolean add(E user_object) {
+            M d = metricFunction(user_object, this.getValue());
 
-            if(d.doubleValue() == 0.0)
-            {
+            if (d.doubleValue() == 0.0) {
                 // the two user objects match exactly so there is nothing to add
                 return false;
             }
 
             BKTreeNode child_node = child_nodes.get(d);
-            if(child_node == null)
-            {
+            if (child_node == null) {
                 child_nodes.put(d,
                         new BKTreeNode(user_object, this));
                 return true;
@@ -91,78 +70,45 @@ public abstract class BKTree<M extends Number,E>
          *
          * @return
          */
-        public boolean isLeaf()
-        {
+        public boolean isLeaf() {
             return child_nodes.isEmpty();
         }
 
         /**
-         * 
-         * @return
+         * Get all children of the current node.
+         * @return child nodes
          */
-        public Iterator<BKTreeNode> children()
-        {
-            return child_nodes.values().iterator();
+        public Collection<? extends Node> getChildren() {
+            return child_nodes.values();
+        }
+    }
+
+    private class BKTreeHierarchicalVisitor extends HierarchicalVisitor<E> {
+
+        private int distance;
+        private E value;
+        private MultiMap<Integer, E> result;
+        private int current_distance;
+
+        public BKTreeHierarchicalVisitor(int distance, E value) {
+            this.distance = distance;
+            this.value = value;
+            this.result = new MultiMap<Integer, E>();
+            this.current_distance = -1;
         }
 
-        /**
-         *
-         * @return
-         */
+        public int getDistance() {
+            return distance;
+        }
+
+        public void setCurrentDistance(int current_distance) {
+            this.current_distance = current_distance;
+        }
+
         @Override
-        public String toString()
-        {
-            return user_object.toString();
+        public void visit(Tree<E>.Node node) {
+            result.put(current_distance, node.getValue());
         }
-
-        /**
-         *
-         * @param depth
-         */
-        public void print(int depth)
-        {
-            for(int i = 0; i < depth; i++) System.out.print("   ");
-            System.out.println(toString());
-            for(BKTreeNode child_node : child_nodes.values())
-                child_node.print(depth + 1);
-        }
-    }
-
-    protected abstract M metric(E o1, E o2);
-
-    private BKTreeNode root_node;
-    private int node_count;
-
-    private static int levenshteinDistance(String s1,
-            String s2)
-    {
-        int[][] distance = new int[s1.length() + 1][s2.length() + 1];
-        for(int i = 0; i < distance.length; i++) distance[i][0] = i;
-        for(int j = 0; j < distance[0].length; j++) distance[0][j] = j;
-
-        int cost = -1;
-        for(int j = 1; j < distance[0].length; j++)
-        {
-            for(int i = 1; i < distance.length; i++)
-            {
-                cost = ((s1.charAt(i - 1) == s2.charAt(j - 1)) ? 0 : 1);
-                distance[i][j]
-                        = Math.min(distance[i - 1][j] + 1,
-                        Math.min(distance[i][j - 1] + 1,
-                        distance[i - 1][j - 1] + cost));
-            }
-        }
-
-        return distance[distance.length - 1][distance[0].length - 1];
-    }
-
-    /**
-     *
-     */
-    public BKTree()
-    {
-        this.root_node = null;
-        this.node_count = 0;
     }
 
     /**
@@ -170,18 +116,15 @@ public abstract class BKTree<M extends Number,E>
      * @param user_object
      * @return
      */
-    public boolean add(E user_object)
-    {
-        if(root_node == null)
-        {
+    public boolean add(E user_object) {
+        if (root_node == null) {
             root_node = new BKTreeNode(user_object, null);
-            node_count = 1;
+            size = 1;
             return true;
         }
 
-        if(root_node.add(user_object) == true)
-        {
-            node_count++;
+        if (((BKTreeNode) root_node).add(user_object) == true) {
+            size++;
             return true;
         }
 
@@ -189,80 +132,69 @@ public abstract class BKTree<M extends Number,E>
     }
 
     /**
-     *
-     * @return
+     * 
+     * @param input
+     * @param distance
+     * @return 
      */
-    public int size()
-    {
-        return node_count;
-    }
+    public MultiMap<Integer, E> correctError(int distance, E input) {
+        BKTreeHierarchicalVisitor visitor = new BKTreeHierarchicalVisitor(distance, input);
 
-    /**
-     *
-     */
-    public void print()
-    {
-        if(root_node != null) root_node.print(0);
-    }
-
-    /**
-     *
-     * @param user_object
-     * @param metric_distance
-     * @return
-     */
-    public Collection<E> query(E user_object,
-            M metric_distance)
-    {
-        if(root_node == null) return new ArrayList<E>(0);
-        return root_node.query(user_object, metric_distance);
-    }
-
-    public static void main(String[] args)
-    {
-        String[] words = {
-            "alpha",
-            "bravo",
-            "charlie",
-            "delta",
-            "echo",
-            "foxtrot",
-            "golf",
-            "hotel",
-            "india",
-            "juliet",
-            "kilo",
-            "lima",
-            "mike",
-            "november",
-            "oscar",
-            "papa",
-            "quebec",
-            "whiskey",
-            "uncle",
-            "victor",
-            "x-ray",
-            "yankee",
-            "zulu",
-        };
-        BKTree<Integer,String> tree = new BKTree<Integer,String>() {
-            protected Integer metric(String o1,
-                    String o2)
-            {
-                int result = -1;
-                result = levenshteinDistance(o1, o2);
-                return new Integer(result);
-            } // metric
-        };
-
-        for(String word : words)
-        {
-            tree.add(word);
+        if (root_node != null) {
+            accept(visitor, HierarchicalTraversalOrder.BREADTH_FIRST);
         }
-        System.out.println("Tree size: " + tree.size());
-        tree.print();
-        Collection<String> cs = tree.query("*l**a", new Integer(3));
-        System.out.println(cs.size() + " matches");
-        System.out.println(cs);
+
+        return (MultiMap<Integer, E>) visitor.result;
+    }
+
+    private M recast(M original, double value) {
+        M result = null;
+
+        if (original instanceof Integer) {
+            result = (M) Integer.valueOf((int) Math.round(value));
+        } else if (original instanceof Long) {
+            result = (M) Long.valueOf(Math.round(value));
+        } else if (original instanceof Double) {
+            result = (M) Double.valueOf(value);
+        } else if (original instanceof Float) {
+            result = (M) Float.valueOf((float) value);
+        }
+
+        return result;
+    }
+
+    /**
+     * 
+     * @param visitor
+     * @param order 
+     */
+    @Override
+    public void accept(HierarchicalVisitor visitor, HierarchicalTraversalOrder order) {
+        LinkedList<Node> node_queue = new LinkedList<Node>(Arrays.asList(root_node));
+        BKTreeHierarchicalVisitor actual_visitor = (BKTreeHierarchicalVisitor) visitor;
+        BKTreeNode current_node = null;
+        M raw_distance = null;
+        double distance = 0;
+        double low = Double.MIN_VALUE;
+        double high = Double.MAX_VALUE;
+
+        while (!node_queue.isEmpty()) {
+            current_node = (BKTreeNode) node_queue.poll();
+
+            raw_distance = metricFunction(actual_visitor.value, current_node.getValue());
+            distance = raw_distance.doubleValue();
+            low = distance - actual_visitor.getDistance();
+            high = distance + actual_visitor.getDistance();
+
+            if (distance <= actual_visitor.getDistance()) {
+                // TODO: this needs to be recast
+                actual_visitor.setCurrentDistance((int) distance);
+                current_node.accept(visitor, order);
+            }
+
+            M low_recast = recast(raw_distance, low);
+            M high_recast = recast(raw_distance, high);
+            node_queue.addAll(current_node.child_nodes.subMap(low_recast, true, high_recast, true).values());
+        }
     }
 }

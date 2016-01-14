@@ -3,23 +3,40 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.infiauto</groupId>
-  <artifactId>datastr</artifactId>
-  <version>0.3.1</version>
+  <artifactId>infiauto-datastr</artifactId>
+  <version>0.3.3</version>
   <packaging>jar</packaging>
 
-  <name>Data structures for approximate string matching</name>
+  <name>Infinite Automata data structures library</name>
   <url>http://www.infiauto.com</url>
 
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.10</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
   <build>
+    <sourceDirectory>src</sourceDirectory>
+    <testSourceDirectory>test</testSourceDirectory>
     <plugins>
       <plugin>
-	<groupId>org.apache.maven.plugins</groupId>
-	<artifactId>maven-compiler-plugin</artifactId>
-	<configuration>
-	  <source>1.6</source>
-	  <target>1.6</target>
-	</configuration>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.2</version>
+        <configuration>
+          <source>1.7</source>
+          <target>1.8</target>
+        </configuration>
       </plugin>
     </plugins>
   </build>
+
 </project>

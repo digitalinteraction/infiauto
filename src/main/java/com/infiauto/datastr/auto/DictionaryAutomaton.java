@@ -11,8 +11,8 @@ import java.util.*;
 public class DictionaryAutomaton
         extends Automaton<Character, String>
         implements Serializable {
-	private static final long serialVersionUID = 6023191015213346573L;
-	private Set<Character> alphabet;
+
+    private Set<Character> alphabet;
 
     private static Map<Character[], String> buildInitialInput(List<String> word_list) {
         HashMap<Character[], String> results = new HashMap<Character[], String>();
@@ -67,11 +67,12 @@ public class DictionaryAutomaton
     }
 
     public boolean match(String word) {
-        DictionaryAutomaton.State<Character> state = getCurrentState();
+        DictionaryAutomaton.State state = getCurrentState();
         for (char c : word.toCharArray()) {
             state = state.getNextState(c);
-            if (state == null)
+            if (state == null) {
                 return false;
+            }
         }
         return state.isAccept();
     }

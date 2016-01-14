@@ -7,38 +7,39 @@ import java.util.*;
  * Generalized class for representing automata.
  * @author Infinite Automata
  */
-public abstract class Automaton<INTYPE,ELEMTYPE>
-        implements Serializable
-{
-	private static final long serialVersionUID = -3167021649972153352L;
+public abstract class Automaton<INTYPE, ELEMTYPE>
+        implements Serializable {
 
-	/**
+    /**
      * Atomic state that forms the basic building block of the automaton.
      * @param <TP> Type of key for state transitions.
      */
     protected class State<TP>
-            implements Serializable
-    {
-		private static final long serialVersionUID = 6364701466652937989L;
-		
-		private ELEMTYPE element;
-        protected Map<TP,State<TP>> next_states;
+            implements Serializable {
 
-        protected State()
-        {
+        private ELEMTYPE element;
+        protected Map<TP, State> next_states;
+        private String to_string;
+
+        protected State() {
             this(null);
         }
 
-        protected State(ELEMTYPE element)
-        {
+        protected State(ELEMTYPE element) {
             this.element = element;
-            this.next_states = new HashMap<TP,State<TP>>();
+            this.next_states = new HashMap<TP, State>();
         }
 
-        public State<TP> addNextState(TP t, State<TP> next_state)
-        {
-            if(next_states.containsKey(t))
+        protected State(ELEMTYPE element, String to_string) {
+            this.element = element;
+            this.next_states = new HashMap<TP, State>();
+            this.to_string = to_string;
+        }
+
+        public State<TP> addNextState(TP t, State<TP> next_state) {
+            if (next_states.containsKey(t)) {
                 return next_states.get(t);
+            }
             next_states.put(t, next_state);
             return next_state;
         }
@@ -52,13 +53,11 @@ public abstract class Automaton<INTYPE,ELEMTYPE>
          * @param t Transition to the next state.
          * @return New state associated with the specified transition.
          */
-        public State<TP> addNextState(TP t)
-        {
+        public State<TP> addNextState(TP t) {
             return addNextState(t, new State<TP>());
         }
 
-        protected State<TP> getNextState(TP t)
-        {
+        protected State<TP> getNextState(TP t) {
             return next_states.get(t);
         }
 
@@ -67,8 +66,7 @@ public abstract class Automaton<INTYPE,ELEMTYPE>
          * @return True if the state is an accepting state,
          * false otherwise.
          */
-        public boolean isAccept()
-        {
+        public boolean isAccept() {
             return element != null;
         }
 
@@ -83,26 +81,31 @@ public abstract class Automaton<INTYPE,ELEMTYPE>
         protected void setElement(ELEMTYPE element) {
             this.element = element;
         }
+        
+        @Override
+        public String toString() {
+            if(to_string == null) {
+                return super.toString();
+            }
+            return to_string;
+        }
     }
 
     /**
      * Get the current state of the automaton.
      * @return Automaton's current state.
      */
-    public State<INTYPE> getCurrentState()
-    {
+    public State<INTYPE> getCurrentState() {
         return root_node;
     }
-
-    protected State<INTYPE> root_node;
+    protected State root_node;
     private int state_count;
 
     /**
      * Initialize an empty Automaton.
      */
-    protected Automaton()
-    {
-        this.root_node = new State<INTYPE>();
+    protected Automaton() {
+        this.root_node = new State();
         this.state_count = 0;
     }
 
@@ -111,13 +114,15 @@ public abstract class Automaton<INTYPE,ELEMTYPE>
      * @param initial_input mapping of paths to output elements
      * @see Map
      */
-    public Automaton(Map<INTYPE[],ELEMTYPE> initial_input) {
+    public Automaton(Map<INTYPE[], ELEMTYPE> initial_input) {
         this();
 
-        for(INTYPE[] input_string : initial_input.keySet()) {
-            State<INTYPE> current_node = root_node;
-            for(INTYPE input_symbol : input_string) {
-                State<INTYPE> next_node = current_node.getNextState(input_symbol);
+        for (INTYPE[] input_string : initial_input.keySet()) {
+            State current_node = root_node;
+            for (INTYPE input_symbol : input_string) {
+                State next_node = null;
+                next_node = current_node.getNextState(input_symbol);
+
                 if (next_node == null) {
                     next_node = current_node.addNextState(input_symbol);
                     this.state_count++;

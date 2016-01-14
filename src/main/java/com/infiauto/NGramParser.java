@@ -80,7 +80,7 @@ public class NGramParser {
         } // equals
     } // class NGramCountDescendingComparator
 
-    //private static final int MAX_NGRAMS = 400;
+    private static final int MAX_NGRAMS = 400;
 
     private int length;
     private CircularBuffer<Character> buffer;
@@ -273,7 +273,7 @@ public class NGramParser {
                 System.exit(-1);
             }
 
-        //    String out_file_name = args[2];
+            String out_file_name = args[2];
 
             String[] in_file_names = new String[args.length - 3];
             for(int i = 0; i < in_file_names.length; i++) {
@@ -311,7 +311,7 @@ public class NGramParser {
                 }
             }
 
-        //    int count = 0;
+            int count = 0;
             List<Map.Entry<String,BigInteger>> sorted_entries
                     = new ArrayList<Map.Entry<String,BigInteger>>(ngrams.entrySet());
             Collections.sort(sorted_entries, new NGramCountDescendingComparator());
