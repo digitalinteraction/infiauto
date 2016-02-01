@@ -21,7 +21,7 @@ public class Primes {
         BitSet not_prime = new BitSet(max);
         LinkedList<Integer> temp = new LinkedList<Integer>();
         
-        int root_max = ((Double) Math.sqrt((double) max)).intValue();
+        int root_max = ((Double) java.lang.Math.sqrt((double) max)).intValue();
         for(int i = FIRST_PRIME; i <= root_max; i++) {
             int index = i - FIRST_PRIME;
             if(!not_prime.get(index)) {
