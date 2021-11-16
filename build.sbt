@@ -12,4 +12,6 @@ libraryDependencies ++= Seq(
 
 // Remove Scala dependencies
 crossPaths := false
-autoScalaLibrary := false
+
+// This is not required to build with SBT but IDEA fails unless this is enabled
+// autoScalaLibrary := false
