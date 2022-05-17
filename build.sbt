@@ -3,7 +3,7 @@ organization := "com.infiauto"
 description := "Infinite Automata data structures library"
 version := "0.3.3"
 
-javaSource in Compile := baseDirectory.value / "src"
+javaSource in Compile := baseDirectory.value / "src" / "main" / "java"
 javaSource in Test := baseDirectory.value / "test"
 
 libraryDependencies ++= Seq(  
